@@ -1,4 +1,4 @@
-﻿---
+---
 name: aero_doc
 description: Automatically updates markdown documentation when code, prompts, or agent behaviors change.
 version: 2.1.0
@@ -63,7 +63,9 @@ Unpack the JSON payload:
 | `diff` | Raw unified diff. Use this to understand the _content_ of each change — new logic, renamed variables, removed behaviour. |
 | `truncated` | `true` if the diff was cut short. Factor this into your confidence level. |
 | `current_docs` | The existing documentation text, or a blank template on first run. |
+| `readme_content` | The existing content of the project's README.md file. |
 | `doc_path` | The file path you must write the final result to. |
+| `tools_extracted` | Structured list of tool schemas extracted from Python decorators and JSON. Use this to document available agent tools. |
 
 Status codes in `changed_files`:
 
@@ -91,7 +93,15 @@ Scan the `diff` and `changed_files` for changes that a reader would need to know
 Ignore internal refactors, comment edits, test files, and formatting-only changes
 unless they expose a meaningful behavioral difference.
 
-#### 4b. Apply the right edit strategy
+#### 4b. Extract Tools and Schemas
+
+Using the `tools_extracted` field from the script output, generate or update an API table detailing what each tool does. Format the table as follows:
+
+| Active Agent Tool | Accepted Inputs | Expected Output / Description |
+|---|---|---|
+| `fetch_user_data` | `user_id: str` | JSON payload of user metrics |
+
+#### 4c. Apply the right edit strategy
 
 **Surgical edits** (default for `M` and `R` changes):
 - Locate the exact section in `current_docs` that covers the changed file or feature.
@@ -108,6 +118,12 @@ unless they expose a meaningful behavioral difference.
 
 **Rename handling** (for `R` — renamed files):
 - Update the section heading and every in-document reference to the old name.
+
+**Visual Docs (Mermaid.js Flowcharts):**
+- If the git diff introduces or alters how different parts of the code interact (e.g., API routing, parent-child component calls), you MUST generate or update a Mermaid.js flowchart mapping out this logical flow inside the "System Architecture" section of the document.
+
+**Project README.md:**
+- In addition to updating the manual, review the changes to see if they introduce new core features, change the technology stack, or affect the high-level architecture. If so, you MUST also edit `README.md` (using the provided `readme_content` as a base) to accurately reflect the core features, tech stack, and high-level documentation of the project.
 
 **Bootstrap mode** (first run — `current_docs` is the blank template):
 - Treat this as a green-field document. Write a complete initial manual that covers every file in `changed_files`. Do not apply surgical edits; write top-down, covering all relevant files.
@@ -162,7 +178,14 @@ This is the most important step. Mechanical correctness is not enough. The docum
 
 ### Step 6 — Save and report
 
-1. Write the final markdown to `doc_path`.
+**Native Antigravity Artifacts (Important):**
+Before overwriting the final document files, if you are running in Antigravity, you MUST generate an Implementation Plan artifact (`implementation_plan.md`). Present a structured list of what documentation sections you plan to modify, and wait for the user to explicitly approve or reject your draft before writing to the actual files.
+
+1. Once approved (or if not in Antigravity), write to the following files:
+   - **`doc_path` (e.g., `AGENT_MANUAL.md`)**: The source of truth representing the current state.
+   - **`CHANGELOG_AGENTS.md`**: A chronological list of prompt adjustments. Every time a prompt or behavior changes, append a clean, human-readable line formatted like:
+     `2026-07-16: Updated system_prompt to improve safety filtering and added support for the user_zipcode variable.`
+   - **`README.md`**: Update this file to keep the core features, technology stack, and high-level project overview accurate.
 2. Report to the user with one bullet per changed section:
    - Prefix additions with **Added:**
    - Prefix modifications with **Updated:**
