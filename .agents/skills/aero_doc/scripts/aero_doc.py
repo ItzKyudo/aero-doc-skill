@@ -251,17 +251,14 @@ def gather_tools(dirs: list[str]) -> list[dict]:
 # Docs helpers
 # ---------------------------------------------------------------------------
 
-DOCS_TEMPLATE = """\
-# Agent System Manual
-
-Welcome to your AI Agent documentation. This file is automatically maintained by AeroDoc.
-
-## Agent System Prompts
-*No system prompts documented yet.*
-
-## Configured Behaviors
-*No custom behaviors tracked yet.*
-"""
+def get_template(name: str) -> str:
+    """Load a reference template from the resources directory."""
+    template_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "resources", name)
+    try:
+        with open(template_path, "r", encoding="utf-8") as f:
+            return f.read()
+    except OSError:
+        return f"# Template not found: {name}\n"
 
 
 def read_existing_docs(path: str) -> str:
@@ -272,7 +269,7 @@ def read_existing_docs(path: str) -> str:
                 return f.read()
         except OSError as exc:
             return f"# Agent System Manual\n\n_Error reading file: {exc}_\n"
-    return DOCS_TEMPLATE
+    return get_template("AGENT_MANUAL_TEMPLATE.md")
 
 
 def read_readme() -> str:
@@ -284,7 +281,7 @@ def read_readme() -> str:
                 return f.read()
         except OSError:
             pass
-    return "# Project Overview\n\n*No README available yet.*\n"
+    return get_template("README_TEMPLATE.md")
 
 
 # ---------------------------------------------------------------------------
@@ -325,6 +322,9 @@ def main() -> None:
     current_docs = read_existing_docs(args.doc)
     readme_content = read_readme()
     tools_extracted = gather_tools(args.dirs)
+    
+    agent_manual_template = get_template("AGENT_MANUAL_TEMPLATE.md")
+    readme_template = get_template("README_TEMPLATE.md")
 
     result = {
         "status": "changes_detected",
@@ -335,6 +335,8 @@ def main() -> None:
         "current_docs": current_docs,
         "readme_content": readme_content,
         "tools_extracted": tools_extracted,
+        "agent_manual_template": agent_manual_template,
+        "readme_template": readme_template,
     }
 
     print(json.dumps(result, ensure_ascii=False))

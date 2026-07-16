@@ -64,6 +64,8 @@ Unpack the JSON payload:
 | `truncated` | `true` if the diff was cut short. Factor this into your confidence level. |
 | `current_docs` | The existing documentation text, or a blank template on first run. |
 | `readme_content` | The existing content of the project's README.md file. |
+| `agent_manual_template` | The reference template outlining how the Agent Manual should be organized. |
+| `readme_template` | The reference template outlining how the README.md should be organized. |
 | `doc_path` | The file path you must write the final result to. |
 | `tools_extracted` | Structured list of tool schemas extracted from Python decorators and JSON. Use this to document available agent tools. |
 
@@ -139,6 +141,10 @@ Using the `tools_extracted` field from the script output, generate or update an 
 ### Step 5 — Writing standards
 
 This is the most important step. Mechanical correctness is not enough. The documentation you produce must be genuinely useful to a human reader.
+
+#### Organization and Reference Templates
+
+- **Adhere to Templates:** Always structure your updates to match the organization provided in `agent_manual_template` and `readme_template`. Reorganize existing unstructured content if necessary to conform to these reference models.
 
 #### Voice and tone
 
