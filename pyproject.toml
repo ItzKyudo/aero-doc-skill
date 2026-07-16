@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aero-doc"
+version = "2.1.0"
+description = "Antigravity skill that keeps your markdown docs in sync with code changes."
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.8"
+keywords = ["documentation", "antigravity", "agent", "skill", "autodoc"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Documentation",
+    "Topic :: Software Development :: Documentation",
+]
+
+[project.scripts]
+aero-doc = "aero_doc.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["aero_doc*"]
+
+[tool.setuptools.package-data]
+aero_doc = ["skill_data/**/*"]

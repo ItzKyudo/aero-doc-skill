@@ -1,0 +1,2 @@
+[console_scripts]
+aero-doc = aero_doc.cli:main

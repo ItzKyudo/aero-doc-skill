@@ -1,0 +1,12 @@
+LICENSE
+README.md
+pyproject.toml
+aero_doc/__init__.py
+aero_doc/cli.py
+aero_doc.egg-info/PKG-INFO
+aero_doc.egg-info/SOURCES.txt
+aero_doc.egg-info/dependency_links.txt
+aero_doc.egg-info/entry_points.txt
+aero_doc.egg-info/top_level.txt
+aero_doc/skill_data/skill.md
+aero_doc/skill_data/scripts/aero_doc.py

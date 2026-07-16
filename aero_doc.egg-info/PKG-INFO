@@ -1,3 +1,46 @@
+Metadata-Version: 2.4
+Name: aero-doc
+Version: 2.1.0
+Summary: Antigravity skill that keeps your markdown docs in sync with code changes.
+License: MIT License
+        
+        Copyright (c) 2026 AeroDoc Contributors
+        
+        Permission is hereby granted, free of charge, to any person obtaining a copy
+        of this software and associated documentation files (the "Software"), to deal
+        in the Software without restriction, including without limitation the rights
+        to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+        copies of the Software, and to permit persons to whom the Software is
+        furnished to do so, subject to the following conditions:
+        
+        The above copyright notice and this permission notice shall be included in all
+        copies or substantial portions of the Software.
+        
+        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+        IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+        FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+        AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+        LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+        OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+        SOFTWARE.
+        
+Keywords: documentation,antigravity,agent,skill,autodoc
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Topic :: Documentation
+Classifier: Topic :: Software Development :: Documentation
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Dynamic: license-file
+
 # AeroDoc
 
 **AeroDoc** is an Antigravity agent skill that keeps your markdown documentation in perfect sync with your code, prompts, and agent configurations — automatically, on every commit.
@@ -39,51 +82,31 @@ The agent follows strict writing standards: present tense, direct voice, surgica
 
 ## Quick start
 
-### 1. Install
-
-```bash
-pip install aero-doc
-```
-
-> **Installing from source** (before the package is published to PyPI):
-> ```bash
-> git clone https://github.com/your-username/autodocuskill.git
-> pip install ./autodocuskill
-> ```
-
-### 2. Add the skill to your project
-
-Run this inside your project's root directory:
-
-```bash
-aero-doc install
-```
-
-That's it. The command copies the skill files into `.agents/skills/aero_doc/` — no manual file management needed.
+### 1. Copy the skill into your project
 
 ```
 your-project/
 └── .agents/
     └── skills/
-        └── aero_doc/          ← created by aero-doc install
+        └── aero_doc/
             ├── skill.md
             └── scripts/
                 └── aero_doc.py
 ```
 
-### 3. Verify the helper runs
+### 2. Run the helper manually to verify
 
 ```bash
-aero-doc run
+python .agents/skills/aero_doc/scripts/aero_doc.py
 ```
 
-On a repo with no tracked changes you'll see:
+On a repo with no tracked changes, you'll see:
 
 ```json
 {"status": "no_changes", "message": "No prompt or code changes detected in the tracked directories.", "doc_path": "docs/AGENT_MANUAL.md"}
 ```
 
-On a repo with changes you'll see:
+On a repo with changes, you'll see:
 
 ```json
 {
@@ -96,10 +119,9 @@ On a repo with changes you'll see:
 }
 ```
 
-### 4. Commit and let Antigravity take over
+### 3. Trigger via Antigravity
 
-Commit the new `.agents/` files. From here, the Antigravity agent fires automatically
-on every relevant commit and writes the updated docs to `docs/AGENT_MANUAL.md`.
+The skill is registered to fire automatically on `on_commit` and on changes to `src/**/*`, `prompts/**/*`, and `.agents/skills/**/*`. The Antigravity agent will invoke it and write the updated docs to `docs/AGENT_MANUAL.md`.
 
 ---
 
