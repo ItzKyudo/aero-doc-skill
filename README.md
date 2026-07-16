@@ -34,6 +34,7 @@ The agent follows strict writing standards: present tense, direct voice, surgica
 - Python 3.8 or later
 - Git (the project must be a git repository)
 - [Antigravity IDE](https://antigravity.dev) with skill support
+- Node.js 16+ *(only if installing via npm)*
 
 ---
 
@@ -41,14 +42,25 @@ The agent follows strict writing standards: present tense, direct voice, surgica
 
 ### 1. Install
 
+**Via pip (Python):**
+
 ```bash
 pip install aero-doc
 ```
 
-> **Installing from source** (before the package is published to PyPI):
+**Via npm (Node.js):**
+
+```bash
+npm install -g aero-doc
+```
+
+> Both packages expose the same `aero-doc` CLI. The npm package bundles the Python helper scripts and delegates to your system Python (3.8+ required).
+
+> **Installing from source** (before publishing):
 > ```bash
-> git clone https://github.com/your-username/autodocuskill.git
-> pip install ./autodocuskill
+> git clone https://github.com/ItzKyudo/aero-doc-skill.git
+> pip install ./aero-doc-skill      # Python
+> npm install -g ./aero-doc-skill   # Node.js
 > ```
 
 ### 2. Add the skill to your project

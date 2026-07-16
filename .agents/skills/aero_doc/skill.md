@@ -1,19 +1,29 @@
----
+﻿---
 name: aero_doc
 description: Automatically updates markdown documentation when code, prompts, or agent behaviors change.
 version: 2.1.0
-platform: python
-entrypoint: scripts/aero_doc.py
-triggers:
-  - on_commit
-  - on_file_change: ["src/**/*", "prompts/**/*", ".agents/skills/**/*"]
 ---
 
-# AeroDoc Skill
+# AeroDoc — Automated Documentation Updater
 
-You are a senior technical writer. Your sole responsibility is keeping the project's
-documentation in perfect, verifiable sync with its code and prompt changes.
-Write with authority and precision. Every sentence you add must earn its place.
+**Trigger:** Run this skill whenever files in `src/`, `prompts/`, or `.agents/skills/` change — on commit, on save, or when explicitly asked to update the docs.
+
+You are acting as a senior technical writer. Your sole responsibility is keeping the project's documentation in perfect, verifiable sync with its code and prompt changes. Write with authority and precision. Every sentence you add must earn its place.
+
+---
+
+## Compatibility
+
+This skill works with any AI coding agent that can run a shell command and write to a file:
+
+| Agent | How to invoke |
+|---|---|
+| **Claude Code** | Run automatically via `CLAUDE.md` hook, or ask: _"Update the docs"_ |
+| **Cursor** | Triggered by `.cursor/rules/aero-doc.mdc` on matching file saves |
+| **OpenAI Codex** | Reads `AGENTS.md` — invoke manually or on commit |
+| **GitHub Copilot** | Reads `.github/copilot-instructions.md` — ask: _"Run aero-doc"_ |
+| **Antigravity** | Triggered automatically via `.agents/skills/aero_doc/skill.md` |
+| **Any other agent** | Ask: _"Run ``python .agents/skills/aero_doc/scripts/aero_doc.py`` and update the docs"_ |
 
 ---
 
@@ -23,11 +33,13 @@ Write with authority and precision. Every sentence you add must earn its place.
 
 Execute the helper script to gather change data:
 
-```
-python scripts/aero_doc.py [--doc <path>] [--dirs <dir1> <dir2> ...] [--max-diff-bytes <N>]
+```bash
+python .agents/skills/aero_doc/scripts/aero_doc.py [--doc <path>] [--dirs <dir1> <dir2> ...] [--max-diff-bytes <N>]
 ```
 
 The script writes a single JSON object to stdout. Capture it and read the `status` field.
+
+> **Note for Antigravity users:** The path is relative — use `scripts/aero_doc.py` when invoking from within the skill context.
 
 ---
 
@@ -92,70 +104,59 @@ unless they expose a meaningful behavioral difference.
 
 **Section addition** (for `A` — new files):
 - Add a new, appropriately levelled heading in the most logical location.
-- Do not append everything at the bottom. Place new sections where a reader
-  would expect to find them.
+- Do not append everything at the bottom. Place new sections where a reader would expect to find them.
 
 **Rename handling** (for `R` — renamed files):
 - Update the section heading and every in-document reference to the old name.
 
 **Bootstrap mode** (first run — `current_docs` is the blank template):
-- Treat this as a green-field document. Write a complete initial manual that
-  covers every file in `changed_files`. Do not apply surgical edits;
-  write top-down, covering all relevant files.
+- Treat this as a green-field document. Write a complete initial manual that covers every file in `changed_files`. Do not apply surgical edits; write top-down, covering all relevant files.
 
 **Truncation caveat** (when `truncated: true`):
 - Acknowledge uncertainty. Add this notice directly above your new or changed content:
   ```
-  > ⚠️ **Note:** The diff was truncated. This section may be incomplete — review the full diff manually.
+  > Warning: The diff was truncated. This section may be incomplete — review the full diff manually.
   ```
 
 ---
 
 ### Step 5 — Writing standards
 
-This is the most important step. Mechanical correctness is not enough.
-The documentation you produce must be genuinely useful to a human reader.
+This is the most important step. Mechanical correctness is not enough. The documentation you produce must be genuinely useful to a human reader.
 
 #### Voice and tone
 
 - Write in **second person** for task-oriented content: _"Run the script with `--doc` to target a custom file."_
 - Write in **third person** for reference content: _"The `--dirs` flag accepts one or more space-separated paths."_
-- Use **present tense**: _"The script outputs…"_ not _"The script will output…"_
+- Use **present tense**: _"The script outputs..."_ not _"The script will output..."_
 - Be **direct**. Open every new section with the most important fact, not background.
-- **No filler**. Remove phrases like _"It is worth noting that…"_, _"As mentioned above…"_, _"Simply…"_
+- **No filler**. Remove phrases like _"It is worth noting that..."_, _"As mentioned above..."_, _"Simply..."_
 
 #### Structure and formatting
 
-- Use **ATX headings** (`##`, `###`) — never `===` or `---` underlines.
+- Use **ATX headings** (`##`, `###`) — never underlines.
 - Use **one blank line** between a heading and its first paragraph.
 - Use **bold** (`**term**`) for the first mention of a key term, then plain text thereafter.
 - Use `inline code` for all: file paths, flag names, variable names, status values, and code symbols.
-- Use **fenced code blocks** with a language tag for all multi-line code or shell examples:
-  ````
-  ```bash
-  python scripts/aero_doc.py --doc wiki/GUIDE.md
-  ```
-  ````
+- Use **fenced code blocks** with a language tag for all multi-line code or shell examples.
 - Use **tables** to compare options, status codes, or fields — not nested bullet lists.
 - Use **numbered lists** only for strictly sequential steps. Use bullets for everything else.
 
 #### Do's and don'ts
 
-| ✅ Do | ❌ Don't |
+| Do | Don't |
 |---|---|
-| _"Pass `--dirs` to limit the scan to specific directories."_ | _"The `--dirs` flag can optionally be passed in if you want to limit…"_ |
+| _"Pass `--dirs` to limit the scan to specific directories."_ | _"The `--dirs` flag can optionally be passed in if you want to limit..."_ |
 | _"Returns `git_error` when git is not available."_ | _"It will return a `git_error` status in cases where git may not be available."_ |
 | Add a section only when the change affects the reader | Add a section for every file that changed |
-| Match the existing document's heading depth | Introduce a new `#` top-level heading inside an existing document |
+| Match the existing document's heading depth | Introduce a new top-level heading inside an existing document |
 | Write one crisp sentence per bullet point | Chain three clauses into a single bullet with semicolons |
 
 #### Length discipline
 
 - A good documentation update is **as short as it can be** while still being complete.
-- Aim for a single sentence per changed behaviour. Expand to a paragraph only when
-  context is genuinely required to understand the change.
-- After drafting, re-read each sentence and ask: _"Would a reader be worse off without this?"_
-  Delete any sentence where the answer is no.
+- Aim for a single sentence per changed behaviour. Expand to a paragraph only when context is genuinely required.
+- After drafting, re-read each sentence and ask: _"Would a reader be worse off without this?"_ Delete any sentence where the answer is no.
 
 ---
 
@@ -186,5 +187,5 @@ Pass these flags when the project uses non-default paths:
 
 **Example — custom paths:**
 ```bash
-python scripts/aero_doc.py --doc wiki/AGENT_GUIDE.md --dirs agents/ configs/
+python .agents/skills/aero_doc/scripts/aero_doc.py --doc wiki/AGENT_GUIDE.md --dirs agents/ configs/
 ```

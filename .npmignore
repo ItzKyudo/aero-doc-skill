@@ -1,0 +1,29 @@
+# Python build artifacts
+*.egg-info/
+dist/
+build/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Python source files inside aero_doc/ (keep skill_data/, exclude the rest)
+aero_doc/__init__.py
+aero_doc/cli.py
+aero_doc/__pycache__/
+
+# Dev & config
+.agents/
+.git/
+.github/
+.venv/
+venv/
+*.cfg
+*.toml
+*.ini
+MANIFEST.in
+
+# Misc
+.DS_Store
+Thumbs.db
+*.log

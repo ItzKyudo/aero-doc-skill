@@ -30,6 +30,67 @@ _RED = "\033[31m"
 _RESET = "\033[0m"
 _BOLD = "\033[1m"
 
+# Platform config snippets injected by `aero-doc install`
+_AERO_DOC_MARKER = "<!-- aero-doc -->"
+
+_CLAUDE_MD_SNIPPET = """
+## AeroDoc — Automated Documentation
+
+After every change to `src/`, `prompts/`, or `.agents/skills/`, run:
+
+```bash
+python .agents/skills/aero_doc/scripts/aero_doc.py
+```
+
+Then follow the instructions in `.agents/skills/aero_doc/skill.md` to update `docs/AGENT_MANUAL.md`.
+"""
+
+_AGENTS_MD_SNIPPET = """
+## AeroDoc — Documentation Sync
+
+This project uses AeroDoc to keep `docs/AGENT_MANUAL.md` in sync with the codebase.
+
+Whenever you modify files under `src/`, `prompts/`, or `.agents/skills/`, run:
+
+```bash
+python .agents/skills/aero_doc/scripts/aero_doc.py
+```
+
+Follow the output instructions to update the documentation. Full protocol: `.agents/skills/aero_doc/skill.md`.
+"""
+
+_CURSOR_MDC = """---
+description: Run AeroDoc to update docs/AGENT_MANUAL.md whenever src/, prompts/, or .agents/skills/ files change.
+globs:
+  - "src/**/*"
+  - "prompts/**/*"
+  - ".agents/skills/**/*"
+alwaysApply: false
+---
+
+# AeroDoc — Documentation Sync
+
+When files matching the globs above are saved or modified, run:
+
+```bash
+python .agents/skills/aero_doc/scripts/aero_doc.py
+```
+
+Then follow the instructions in `.agents/skills/aero_doc/skill.md` to update `docs/AGENT_MANUAL.md`.
+"""
+
+_COPILOT_SNIPPET = """
+## AeroDoc — Documentation Sync
+
+This project uses AeroDoc. When `src/`, `prompts/`, or `.agents/skills/` files change, run:
+
+```bash
+python .agents/skills/aero_doc/scripts/aero_doc.py
+```
+
+Follow `.agents/skills/aero_doc/skill.md` to update `docs/AGENT_MANUAL.md`.
+"""
+
 
 def _ok(msg: str) -> None:
     print(f"  {_GREEN}ok{_RESET}  {msg}")
@@ -65,7 +126,7 @@ def _skill_data_dir() -> Path:
 # ---------------------------------------------------------------------------
 
 def cmd_install(args: argparse.Namespace) -> int:
-    """Copy the aero_doc skill into the current project."""
+    """Copy the aero_doc skill into the current project and generate platform config files."""
     target = Path(args.target) if args.target else SKILL_DEST
     src = _skill_data_dir()
 
@@ -84,14 +145,68 @@ def cmd_install(args: argparse.Namespace) -> int:
         return 1
 
     _ok(f"Skill files copied to {target}/")
-    _ok(f"skill.md           - agent instructions")
-    _ok(f"scripts/aero_doc.py - helper script")
+    _ok("skill.md            - agent instructions (universal)")
+    _ok("scripts/aero_doc.py - helper script")
+
+    if not args.no_platform_files:
+        _section("Generating platform config files")
+        _write_platform_files(args.force)
 
     print(
-        f"\n{_BOLD}Next step:{_RESET} commit these files and let Antigravity do the rest.\n"
+        f"\n{_BOLD}Next step:{_RESET} commit these files and let your agent do the rest.\n"
         f"  Run manually:  python {target / 'scripts' / 'aero_doc.py'} --help\n"
+        f"  Works with:    Claude Code, Cursor, Codex, Copilot, Antigravity\n"
     )
     return 0
+
+
+def _write_platform_files(force: bool) -> None:
+    """Write platform-specific agent config files."""
+
+    def _append_or_create(path: Path, snippet: str, label: str) -> None:
+        """Append snippet to file if marker absent, or create the file."""
+        if path.exists():
+            existing = path.read_text(encoding="utf-8")
+            if _AERO_DOC_MARKER in existing:
+                _warn(f"{path} — already configured, skipping.")
+                return
+            if not force:
+                with open(path, "a", encoding="utf-8") as f:
+                    f.write(f"\n{_AERO_DOC_MARKER}\n{snippet}")
+                _ok(f"{path} — appended {label} block")
+            else:
+                with open(path, "a", encoding="utf-8") as f:
+                    f.write(f"\n{_AERO_DOC_MARKER}\n{snippet}")
+                _ok(f"{path} — appended {label} block (force)")
+        else:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(f"{_AERO_DOC_MARKER}\n{snippet}", encoding="utf-8")
+            _ok(f"{path} — created ({label})")
+
+    def _write_new(path: Path, content: str, label: str) -> None:
+        """Write file only if it doesn't exist (or force)."""
+        if path.exists() and not force:
+            _warn(f"{path} — already exists, skipping. Use --force to overwrite.")
+            return
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content, encoding="utf-8")
+        _ok(f"{path} — created ({label})")
+
+    # Claude Code
+    _append_or_create(Path("CLAUDE.md"), _CLAUDE_MD_SNIPPET, "Claude Code")
+
+    # OpenAI Codex / universal AGENTS.md
+    _append_or_create(Path("AGENTS.md"), _AGENTS_MD_SNIPPET, "Codex / AGENTS.md")
+
+    # Cursor
+    _write_new(Path(".cursor") / "rules" / "aero-doc.mdc", _CURSOR_MDC, "Cursor")
+
+    # GitHub Copilot
+    _append_or_create(
+        Path(".github") / "copilot-instructions.md",
+        _COPILOT_SNIPPET,
+        "GitHub Copilot",
+    )
 
 
 def cmd_run(args: argparse.Namespace) -> int:
@@ -149,6 +264,12 @@ def main() -> None:
         "--force",
         action="store_true",
         help="Overwrite existing skill files.",
+    )
+    p_install.add_argument(
+        "--no-platform-files",
+        action="store_true",
+        dest="no_platform_files",
+        help="Skip generating CLAUDE.md, AGENTS.md, .cursor/rules/, and .github/copilot-instructions.md.",
     )
     p_install.set_defaults(func=cmd_install)
 

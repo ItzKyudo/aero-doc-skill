@@ -1,0 +1,14 @@
+﻿# Python build artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# Node build artifacts
+node_modules/
+*.tgz
