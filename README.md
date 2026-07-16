@@ -1,6 +1,6 @@
 # AeroDoc
 
-**AeroDoc** is an Antigravity agent skill that keeps your markdown documentation in perfect sync with your code, prompts, and agent configurations — automatically, on every commit.
+**AeroDoc** is an agent skill that keeps your markdown documentation in perfect sync with your code, prompts, and agent configurations — automatically, on every commit.
 
 No more stale docs. No more manual copy-paste. AeroDoc reads your git diff, understands what changed, and makes the smallest possible edit to your documentation to reflect it.
 
