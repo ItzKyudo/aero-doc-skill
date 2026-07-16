@@ -15,6 +15,7 @@ Outputs a single JSON object to stdout:
   - doc_path: resolved path of the docs file    (always)
 """
 
+import ast
 import argparse
 import json
 import os
@@ -163,20 +164,101 @@ def get_changed_files(dirs: list[str]) -> list[dict]:
 
 
 # ---------------------------------------------------------------------------
+# Tool Extraction helpers
+# ---------------------------------------------------------------------------
+
+def extract_tools_from_python(filepath: str) -> list[dict]:
+    """Scan a Python file for @tool decorators and extract their schemas."""
+    tools = []
+    try:
+        with open(filepath, "r", encoding="utf-8") as f:
+            tree = ast.parse(f.read(), filename=filepath)
+    except Exception:
+        return tools
+
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            is_tool = any(
+                (isinstance(dec, ast.Name) and dec.id == "tool") or
+                (isinstance(dec, ast.Call) and getattr(dec.func, "id", "") == "tool")
+                for dec in node.decorator_list
+            )
+            if is_tool:
+                args = [arg.arg for arg in node.args.args if arg.arg != "self"]
+                docstring = ast.get_docstring(node) or ""
+                description = docstring.strip().split("\n")[0] if docstring else "No description"
+                tools.append({
+                    "name": node.name,
+                    "inputs": args,
+                    "description": description,
+                    "source": filepath
+                })
+    return tools
+
+
+def extract_tools_from_json(filepath: str) -> list[dict]:
+    """Scan a JSON file heuristically for tool schemas."""
+    tools = []
+    try:
+        with open(filepath, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception:
+        return tools
+
+    # Heuristically check if this json looks like a tool schema
+    if isinstance(data, dict) and "name" in data and "description" in data:
+        inputs = []
+        if "parameters" in data and "properties" in data["parameters"]:
+            inputs = list(data["parameters"]["properties"].keys())
+        tools.append({
+            "name": data.get("name"),
+            "inputs": inputs,
+            "description": data.get("description", ""),
+            "source": filepath
+        })
+    elif isinstance(data, list):
+        for item in data:
+            if isinstance(item, dict) and "name" in item and "description" in item:
+                inputs = []
+                if "parameters" in item and "properties" in item["parameters"]:
+                    inputs = list(item["parameters"]["properties"].keys())
+                tools.append({
+                    "name": item.get("name"),
+                    "inputs": inputs,
+                    "description": item.get("description", ""),
+                    "source": filepath
+                })
+    return tools
+
+
+def gather_tools(dirs: list[str]) -> list[dict]:
+    """Gather all tools from python and json files in the tracked directories."""
+    all_tools = []
+    for d in dirs:
+        if not os.path.isdir(d):
+            continue
+        for root, _, files in os.walk(d):
+            for file in files:
+                filepath = os.path.join(root, file)
+                if file.endswith(".py"):
+                    all_tools.extend(extract_tools_from_python(filepath))
+                elif file.endswith(".json"):
+                    all_tools.extend(extract_tools_from_json(filepath))
+    return all_tools
+
+
+# ---------------------------------------------------------------------------
 # Docs helpers
 # ---------------------------------------------------------------------------
 
-DOCS_TEMPLATE = """\
-# Agent System Manual
-
-Welcome to your AI Agent documentation. This file is automatically maintained by AeroDoc.
-
-## Agent System Prompts
-*No system prompts documented yet.*
-
-## Configured Behaviors
-*No custom behaviors tracked yet.*
-"""
+def get_template(name: str) -> str:
+    """Load a reference template from the resources directory."""
+    template_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "resources", name)
+    try:
+        with open(template_path, "r", encoding="utf-8") as f:
+            return f.read()
+    except OSError:
+        return f"# Template not found: {name}\n"
 
 
 def read_existing_docs(path: str) -> str:
@@ -187,7 +269,19 @@ def read_existing_docs(path: str) -> str:
                 return f.read()
         except OSError as exc:
             return f"# Agent System Manual\n\n_Error reading file: {exc}_\n"
-    return DOCS_TEMPLATE
+    return get_template("AGENT_MANUAL_TEMPLATE.md")
+
+
+def read_readme() -> str:
+    """Read the existing README.md or return a template."""
+    path = "README.md"
+    if os.path.exists(path):
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                return f.read()
+        except OSError:
+            pass
+    return get_template("README_TEMPLATE.md")
 
 
 # ---------------------------------------------------------------------------
@@ -226,6 +320,11 @@ def main() -> None:
 
     changed_files = get_changed_files(args.dirs)
     current_docs = read_existing_docs(args.doc)
+    readme_content = read_readme()
+    tools_extracted = gather_tools(args.dirs)
+    
+    agent_manual_template = get_template("AGENT_MANUAL_TEMPLATE.md")
+    readme_template = get_template("README_TEMPLATE.md")
 
     result = {
         "status": "changes_detected",
@@ -234,6 +333,10 @@ def main() -> None:
         "truncated": truncated,
         "diff": diff,
         "current_docs": current_docs,
+        "readme_content": readme_content,
+        "tools_extracted": tools_extracted,
+        "agent_manual_template": agent_manual_template,
+        "readme_template": readme_template,
     }
 
     print(json.dumps(result, ensure_ascii=False))
