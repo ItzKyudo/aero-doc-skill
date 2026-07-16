@@ -6,24 +6,24 @@ version: 2.1.0
 
 # AeroDoc — Automated Documentation Updater
 
-**Trigger:** Run this skill whenever files in `src/`, `prompts/`, or `.agents/skills/` change — on commit, on save, or when explicitly asked to update the docs.
+**Trigger:** Run this skill whenever files in `src/`, `prompts/`, or `.agents/skills/` change. This can be on commit, on save, or when requested.
 
-You are acting as a senior technical writer. Your sole responsibility is keeping the project's documentation in perfect, verifiable sync with its code and prompt changes. Write with authority and precision. Every sentence you add must earn its place.
+Act as a technical writer. Keep the project's documentation in sync with its code and prompt changes. Write clearly and concisely.
 
 ---
 
 ## Compatibility
 
-This skill works with any AI coding agent that can run a shell command and write to a file:
+This skill works with AI coding agents that can run a shell command and write files:
 
 | Agent | How to invoke |
 |---|---|
-| **Claude Code** | Run automatically via `CLAUDE.md` hook, or ask: _"Update the docs"_ |
-| **Cursor** | Triggered by `.cursor/rules/aero-doc.mdc` on matching file saves |
-| **OpenAI Codex** | Reads `AGENTS.md` — invoke manually or on commit |
-| **GitHub Copilot** | Reads `.github/copilot-instructions.md` — ask: _"Run aero-doc"_ |
-| **Antigravity** | Triggered automatically via `.agents/skills/aero_doc/skill.md` |
-| **Any other agent** | Ask: _"Run ``python .agents/skills/aero_doc/scripts/aero_doc.py`` and update the docs"_ |
+| **Claude Code** | Runs via `CLAUDE.md` hook, or ask: *"Update the docs"* |
+| **Cursor** | Triggered by `.cursor/rules/aero-doc.mdc` on file saves |
+| **OpenAI Codex** | Reads `AGENTS.md` — run manually or on commit |
+| **GitHub Copilot** | Reads `.github/copilot-instructions.md` — ask: *"Run aero-doc"* |
+| **Antigravity** | Runs automatically via `.agents/skills/aero_doc/skill.md` |
+| **Other agents** | Ask: *"Run `python .agents/skills/aero_doc/scripts/aero_doc.py` and update the docs"* |
 
 ---
 
@@ -31,107 +31,106 @@ This skill works with any AI coding agent that can run a shell command and write
 
 ### Step 1 — Run the helper script
 
-Execute the helper script to gather change data:
+Run the helper script to gather changes:
 
 ```bash
 python .agents/skills/aero_doc/scripts/aero_doc.py [--doc <path>] [--dirs <dir1> <dir2> ...] [--max-diff-bytes <N>]
 ```
 
-The script writes a single JSON object to stdout. Capture it and read the `status` field.
+The script outputs a JSON object. Read the `status` field.
 
-> **Note for Antigravity users:** The path is relative — use `scripts/aero_doc.py` when invoking from within the skill context.
+> **Note for Antigravity users:** The path is relative — use `scripts/aero_doc.py` when running from the skill context.
 
 ---
 
-### Step 2 — Branch on status
+### Step 2 — Check status
 
-| `status` | Meaning | What to do |
+| `status` | Meaning | Action |
 |---|---|---|
-| `"no_changes"` | Nothing in the tracked directories changed | Stop. Tell the user: _"Documentation is already up to date."_ |
-| `"git_error"` | git is unavailable or this is not a git repository | Stop. Surface the `message` field verbatim to the user. |
-| `"changes_detected"` | Relevant files were modified | Continue to Step 3. |
+| `"no_changes"` | No tracked files changed | Stop and tell the user: *"Documentation is already up to date."* |
+| `"git_error"` | Git isn't available or it's not a repo | Stop and show the user the `message` field. |
+| `"changes_detected"` | Files changed | Move to Step 3. |
 
 ---
 
 ### Step 3 — Understand the changes
 
-Unpack the JSON payload:
+Read the JSON payload:
 
-| Field | What it contains |
+| Field | Description |
 |---|---|
-| `changed_files` | Structured list of `{path, status}` objects. **Read this first** to form a mental model of what changed and why. |
-| `diff` | Raw unified diff. Use this to understand the _content_ of each change — new logic, renamed variables, removed behaviour. |
-| `truncated` | `true` if the diff was cut short. Factor this into your confidence level. |
-| `current_docs` | The existing documentation text, or a blank template on first run. |
-| `readme_content` | The existing content of the project's README.md file. |
-| `agent_manual_template` | The reference template outlining how the Agent Manual should be organized. |
-| `readme_template` | The reference template outlining how the README.md should be organized. |
-| `doc_path` | The file path you must write the final result to. |
-| `tools_extracted` | Structured list of tool schemas extracted from Python decorators and JSON. Use this to document available agent tools. |
+| `changed_files` | List of `{path, status}` objects. Read this first to understand what changed. |
+| `diff` | Raw unified diff. Read this to see the actual code changes. |
+| `truncated` | `true` if the diff was cut short. Keep this in mind when writing. |
+| `current_docs` | The existing docs, or a blank template if it's the first run. |
+| `readme_content` | The existing README.md content. |
+| `agent_manual_template` | Template showing how the Agent Manual should be organized. |
+| `readme_template` | Template showing how the README.md should be organized. |
+| `doc_path` | The file you need to write the final docs to. |
+| `tools_extracted` | List of tool schemas extracted from code. Use this to document agent tools. |
 
-Status codes in `changed_files`:
+File status codes:
 
 | Code | Meaning |
 |---|---|
-| `A` | File was added |
-| `M` | File was modified |
-| `D` | File was deleted |
-| `R` | File was renamed |
+| `A` | Added |
+| `M` | Modified |
+| `D` | Deleted |
+| `R` | Renamed |
 
 ---
 
-### Step 4 — Analyze, then draft
+### Step 4 — Analyze and draft
 
-#### 4a. Identify what is documentation-worthy
+#### 4a. Find documentation-worthy changes
 
-Scan the `diff` and `changed_files` for changes that a reader would need to know about:
+Check the `diff` and `changed_files` for things the reader actually needs to know:
 
-- **System prompts** — any modification to tone, persona, constraints, or output format.
-- **Prompt variables** — new, renamed, or removed `{{variable}}` placeholders.
-- **Skill configurations** — new skills added or removed under `.agents/skills/`.
-- **Public API surface** — new functions, renamed endpoints, deleted modules.
-- **Behavioral changes** — changes to defaults, environment variables, or configuration schemas.
+- **System prompts:** changes to tone, constraints, or format.
+- **Prompt variables:** new, renamed, or removed `{{variable}}`s.
+- **Skill configurations:** new or removed skills in `.agents/skills/`.
+- **Public API:** new functions, renamed endpoints, deleted modules.
+- **Behavior:** changes to defaults, env vars, or configs.
 
-Ignore internal refactors, comment edits, test files, and formatting-only changes
-unless they expose a meaningful behavioral difference.
+Ignore internal refactors, minor comment edits, test files, and formatting unless they change behavior.
 
-#### 4b. Extract Tools and Schemas
+#### 4b. Extract tools and schemas
 
-Using the `tools_extracted` field from the script output, generate or update an API table detailing what each tool does. Format the table as follows:
+Use `tools_extracted` to create or update an API table showing what each tool does:
 
 | Active Agent Tool | Accepted Inputs | Expected Output / Description |
 |---|---|---|
 | `fetch_user_data` | `user_id: str` | JSON payload of user metrics |
 
-#### 4c. Apply the right edit strategy
+#### 4c. Edit strategy
 
-**Surgical edits** (default for `M` and `R` changes):
-- Locate the exact section in `current_docs` that covers the changed file or feature.
-- Edit or extend only that section. Leave all other sections untouched.
-- Never rewrite prose that is still accurate just because a nearby line changed.
+**Surgical edits** (`M` and `R`):
+- Find the exact section in `current_docs` that covers the change.
+- Edit only that section. Don't touch the rest.
+- Don't rewrite accurate text just because a nearby line changed.
 
-**Section removal** (for `D` — deleted files):
-- Remove the documentation section that described the deleted file or feature.
-- If other sections refer to it by name, update those cross-references.
+**Section removal** (`D`):
+- Delete the section describing the removed file or feature.
+- Update any other sections that reference it.
 
-**Section addition** (for `A` — new files):
-- Add a new, appropriately levelled heading in the most logical location.
-- Do not append everything at the bottom. Place new sections where a reader would expect to find them.
+**Section addition** (`A`):
+- Add a new heading in a logical spot.
+- Don't just dump it at the bottom. Put it where readers expect it.
 
-**Rename handling** (for `R` — renamed files):
-- Update the section heading and every in-document reference to the old name.
+**Renames** (`R`):
+- Update the heading and any references to the old name.
 
-**Visual Docs (Mermaid.js Flowcharts):**
-- If the git diff introduces or alters how different parts of the code interact (e.g., API routing, parent-child component calls), you MUST generate or update a Mermaid.js flowchart mapping out this logical flow inside the "System Architecture" section of the document.
+**Visual docs (Mermaid.js):**
+- If the diff changes how code components interact, update or create a Mermaid.js flowchart in the "System Architecture" section.
 
 **Project README.md:**
-- In addition to updating the manual, review the changes to see if they introduce new core features, change the technology stack, or affect the high-level architecture. If so, you MUST also edit `README.md` (using the provided `readme_content` as a base) to accurately reflect the core features, tech stack, and high-level documentation of the project.
+- If changes affect core features, the tech stack, or high-level architecture, update `README.md` (using `readme_content` as a base).
 
-**Bootstrap mode** (first run — `current_docs` is the blank template):
-- Treat this as a green-field document. Write a complete initial manual that covers every file in `changed_files`. Do not apply surgical edits; write top-down, covering all relevant files.
+**Bootstrap mode** (first run, blank `current_docs`):
+- Write a complete manual covering all `changed_files`. Don't use surgical edits; write the whole document.
 
-**Truncation caveat** (when `truncated: true`):
-- Acknowledge uncertainty. Add this notice directly above your new or changed content:
+**Truncation** (`truncated: true`):
+- If the diff was cut short, add this warning above your changes:
   ```
   > Warning: The diff was truncated. This section may be incomplete — review the full diff manually.
   ```
@@ -140,65 +139,69 @@ Using the `tools_extracted` field from the script output, generate or update an 
 
 ### Step 5 — Writing standards
 
-This is the most important step. Mechanical correctness is not enough. The documentation you produce must be genuinely useful to a human reader.
+Write like a human engineer. Be clear, direct, and concise. Avoid AI-sounding fluff.
 
-#### Organization and Reference Templates
+#### Anti-slop rules
 
-- **Adhere to Templates:** Always structure your updates to match the organization provided in `agent_manual_template` and `readme_template`. Reorganize existing unstructured content if necessary to conform to these reference models.
+- **No buzzwords:** Do not use words like *delve, testament, comprehensive, navigating, robust, seamless, crucial, elevate, utilize, landscape, paradigm, synergy*.
+- **No dramatic intros:** Avoid *"In the ever-evolving world of..."* or *"Welcome to the guide for..."*.
+- **No filler conclusions:** Skip *"In conclusion..."*, *"Ultimately..."*, or *"By following these steps..."*.
+- **Be direct:** State what the code does and how to use it. Skip the marketing fluff.
+
+#### Organization
+
+- **Use the templates:** Structure your updates to match `agent_manual_template` and `readme_template`. Reorganize existing content if it doesn't fit.
 
 #### Voice and tone
 
-- Write in **second person** for task-oriented content: _"Run the script with `--doc` to target a custom file."_
-- Write in **third person** for reference content: _"The `--dirs` flag accepts one or more space-separated paths."_
-- Use **present tense**: _"The script outputs..."_ not _"The script will output..."_
-- Be **direct**. Open every new section with the most important fact, not background.
-- **No filler**. Remove phrases like _"It is worth noting that..."_, _"As mentioned above..."_, _"Simply..."_
+- Use **second person** for instructions: *"Run the script with `--doc`."*
+- Use **third person** for references: *"The `--dirs` flag accepts multiple paths."*
+- Use **active voice** and **present tense**: *"The script outputs..."* (not *"will output"*).
+- Start sections with the most important fact.
+- Remove filler like *"It is worth noting that..."* or *"Simply..."*
 
-#### Structure and formatting
+#### Formatting
 
-- Use **ATX headings** (`##`, `###`) — never underlines.
-- Use **one blank line** between a heading and its first paragraph.
-- Use **bold** (`**term**`) for the first mention of a key term, then plain text thereafter.
-- Use `inline code` for all: file paths, flag names, variable names, status values, and code symbols.
-- Use **fenced code blocks** with a language tag for all multi-line code or shell examples.
-- Use **tables** to compare options, status codes, or fields — not nested bullet lists.
-- Use **numbered lists** only for strictly sequential steps. Use bullets for everything else.
+- Use **ATX headings** (`##`, `###`).
+- Leave **one blank line** below headings.
+- Use **bold** (`**term**`) for the first mention of a key term, then plain text.
+- Use `inline code` for paths, flags, variables, and code.
+- Use **fenced code blocks** for examples.
+- Use **tables** for comparing options.
+- Use **numbered lists** only for steps. Use bullets for everything else.
 
-#### Do's and don'ts
+#### Examples
 
 | Do | Don't |
 |---|---|
-| _"Pass `--dirs` to limit the scan to specific directories."_ | _"The `--dirs` flag can optionally be passed in if you want to limit..."_ |
-| _"Returns `git_error` when git is not available."_ | _"It will return a `git_error` status in cases where git may not be available."_ |
-| Add a section only when the change affects the reader | Add a section for every file that changed |
-| Match the existing document's heading depth | Introduce a new top-level heading inside an existing document |
-| Write one crisp sentence per bullet point | Chain three clauses into a single bullet with semicolons |
+| *"Pass `--dirs` to limit the scan."* | *"The `--dirs` flag can optionally be utilized to seamlessly limit..."* |
+| *"Returns `git_error` when git is not available."* | *"Crucially, it will robustly return a `git_error` status when..."* |
 
-#### Length discipline
+#### Keep it short
 
-- A good documentation update is **as short as it can be** while still being complete.
-- Aim for a single sentence per changed behaviour. Expand to a paragraph only when context is genuinely required.
-- After drafting, re-read each sentence and ask: _"Would a reader be worse off without this?"_ Delete any sentence where the answer is no.
+- Make it as short as possible while staying complete.
+- Aim for one sentence per change. Add a paragraph only if needed.
+- Delete any sentence that doesn't add value.
 
 ---
 
 ### Step 6 — Save and report
 
-**Native Antigravity Artifacts (Important):**
-Before overwriting the final document files, if you are running in Antigravity, you MUST generate an Implementation Plan artifact (`implementation_plan.md`). Present a structured list of what documentation sections you plan to modify, and wait for the user to explicitly approve or reject your draft before writing to the actual files.
+**Antigravity users:**
+If you're running in Antigravity, create an `implementation_plan.md` artifact first. List the sections you plan to change and wait for user approval before writing to files.
 
-1. Once approved (or if not in Antigravity), write to the following files:
-   - **`doc_path` (e.g., `AGENT_MANUAL.md`)**: The source of truth representing the current state.
-   - **`CHANGELOG_AGENTS.md`**: A chronological list of prompt adjustments. Every time a prompt or behavior changes, append a clean, human-readable line formatted like:
+1. Once approved (or if not using Antigravity), update these files:
+   - **`doc_path`** (e.g., `AGENT_MANUAL.md`): The main documentation file.
+   - **`CHANGELOG_AGENTS.md`**: Add a clean, readable line for any prompt or behavior changes, like:
      `2026-07-16: Updated system_prompt to improve safety filtering and added support for the user_zipcode variable.`
-   - **`README.md`**: Update this file to keep the core features, technology stack, and high-level project overview accurate.
-2. Report to the user with one bullet per changed section:
-   - Prefix additions with **Added:**
-   - Prefix modifications with **Updated:**
-   - Prefix removals with **Removed:**
+   - **`README.md`**: Keep the core features and tech stack accurate.
+2. Tell the user what changed, bullet by bullet:
+   - Use **Added:** for new sections.
+   - Use **Updated:** for changed sections.
+   - Use **Removed:** for deleted sections.
 
 Example:
-> - **Added:** `## aero_doc Skill` — documents the new AeroDoc skill configuration.
+> - **Added:** `## aero_doc Skill` — documents the new AeroDoc skill.
 > - **Updated:** `### Configuration / --dirs` — reflects the new default value.
 > - **Removed:** `## Legacy Prompt Loader` — section deleted because `src/loader.py` was removed.
 
@@ -206,15 +209,15 @@ Example:
 
 ## Configuration
 
-Pass these flags when the project uses non-default paths:
+Use these flags for custom paths:
 
 | Flag | Default | Description |
 |---|---|---|
 | `--doc` | `docs/AGENT_MANUAL.md` | Path to the markdown file to update |
-| `--dirs` | `src/ prompts/ .agents/skills/` | One or more directories to watch for changes |
+| `--dirs` | `src/ prompts/ .agents/skills/` | Directories to watch |
 | `--max-diff-bytes` | `40000` | Truncate the diff at this many bytes (0 = unlimited) |
 
-**Example — custom paths:**
+**Example:**
 ```bash
 python .agents/skills/aero_doc/scripts/aero_doc.py --doc wiki/AGENT_GUIDE.md --dirs agents/ configs/
 ```
