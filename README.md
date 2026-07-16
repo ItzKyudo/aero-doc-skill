@@ -42,20 +42,6 @@ The agent follows strict writing standards: present tense, direct voice, surgica
 
 ### 1. Install
 
-**Via pip (Python):**
-
-```bash
-pip install aero-doc
-```
-
-**Via npm (Node.js):**
-
-```bash
-npm install -g aero-doc
-```
-
-> Both packages expose the same `aero-doc` CLI. The npm package bundles the Python helper scripts and delegates to your system Python (3.8+ required).
-
 > **Installing from source** (before publishing):
 > ```bash
 > git clone https://github.com/ItzKyudo/aero-doc-skill.git
