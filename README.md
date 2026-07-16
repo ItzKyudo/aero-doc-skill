@@ -33,7 +33,7 @@ The agent follows strict writing standards: present tense, direct voice, surgica
 
 - Python 3.8 or later
 - Git (the project must be a git repository)
-- [Antigravity IDE](https://antigravity.dev) with skill support
+- [Antigravity IDE](https://antigravity.dev) or any other IDE with skill support
 - Node.js 16+ *(only if installing via npm)*
 
 ---
