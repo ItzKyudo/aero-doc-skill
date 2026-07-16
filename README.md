@@ -99,6 +99,22 @@ On a repo with changes you'll see:
 Commit the new `.agents/` files. From here, the Antigravity agent fires automatically
 on every relevant commit and writes the updated docs to `docs/AGENT_MANUAL.md`.
 
+### 5. Uninstall the skill
+
+To remove the skill from your project, simply delete the skill directory:
+
+```bash
+rm -rf .agents/skills/aero_doc/
+```
+If you had platform files generated (e.g., `CLAUDE.md`, `AGENTS.md`, `.cursor/rules/aero-doc.mdc`), you should also remove the injected `<!-- aero-doc -->` configuration blocks from them.
+
+To remove the `aero-doc` CLI package itself from your system:
+
+```bash
+pip uninstall aero-doc      # If installed via Python
+npm uninstall -g aero-doc   # If installed via Node.js
+```
+
 ---
 
 ## Configuration
