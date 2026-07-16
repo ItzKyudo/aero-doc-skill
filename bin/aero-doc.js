@@ -64,13 +64,13 @@ After every change to \`src/\`, \`prompts/\`, or \`.agents/skills/\`, run:
 python .agents/skills/aero_doc/scripts/aero_doc.py
 \`\`\`
 
-Then follow the instructions in \`.agents/skills/aero_doc/skill.md\` to update \`docs/AGENT_MANUAL.md\`.
+Then follow the instructions in \`.agents/skills/aero_doc/skill.md\` to update \`docs/AGENT_MANUAL.md\`, \`docs/CHANGELOG_AGENTS.md\`, and \`README.md\`.
 `;
 
 const AGENTS_SNIPPET = `
 ## AeroDoc — Documentation Sync
 
-This project uses AeroDoc to keep \`docs/AGENT_MANUAL.md\` in sync with the codebase.
+This project uses AeroDoc to keep project documentation (\`docs/AGENT_MANUAL.md\`, etc.) in sync with the codebase.
 
 Whenever you modify files under \`src/\`, \`prompts/\`, or \`.agents/skills/\`, run:
 
@@ -82,7 +82,7 @@ Follow the output instructions to update the documentation. Full protocol: \`.ag
 `;
 
 const CURSOR_MDC = `---
-description: Run AeroDoc to update docs/AGENT_MANUAL.md whenever src/, prompts/, or .agents/skills/ files change.
+description: Run AeroDoc to update project documentation whenever src/, prompts/, or .agents/skills/ files change.
 globs:
   - "src/**/*"
   - "prompts/**/*"
@@ -98,7 +98,7 @@ When files matching the globs above are saved or modified, run:
 python .agents/skills/aero_doc/scripts/aero_doc.py
 \`\`\`
 
-Then follow the instructions in \`.agents/skills/aero_doc/skill.md\` to update \`docs/AGENT_MANUAL.md\`.
+Then follow the instructions in \`.agents/skills/aero_doc/skill.md\` to update \`docs/AGENT_MANUAL.md\`, \`docs/CHANGELOG_AGENTS.md\`, and \`README.md\`.
 `;
 
 const COPILOT_SNIPPET = `
@@ -110,7 +110,7 @@ This project uses AeroDoc. When \`src/\`, \`prompts/\`, or \`.agents/skills/\` f
 python .agents/skills/aero_doc/scripts/aero_doc.py
 \`\`\`
 
-Follow \`.agents/skills/aero_doc/skill.md\` to update \`docs/AGENT_MANUAL.md\`.
+Follow \`.agents/skills/aero_doc/skill.md\` to update \`docs/AGENT_MANUAL.md\`, \`docs/CHANGELOG_AGENTS.md\`, and \`README.md\`.
 `;
 
 function cmdVersion() {
@@ -149,6 +149,7 @@ function cmdInstall(argv) {
   ok(`Skill files copied to ${target}/`);
   ok("skill.md            - agent instructions (universal)");
   ok("scripts/aero_doc.py - helper script");
+  ok("resources/          - templates and supporting files");
 
   if (!noPlatformFiles) {
     console.log(`\n${bold("Generating platform config files")}`);

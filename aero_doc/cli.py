@@ -42,13 +42,13 @@ After every change to `src/`, `prompts/`, or `.agents/skills/`, run:
 python .agents/skills/aero_doc/scripts/aero_doc.py
 ```
 
-Then follow the instructions in `.agents/skills/aero_doc/skill.md` to update `docs/AGENT_MANUAL.md`.
+Then follow the instructions in `.agents/skills/aero_doc/skill.md` to update `docs/AGENT_MANUAL.md`, `docs/CHANGELOG_AGENTS.md`, and `README.md`.
 """
 
 _AGENTS_MD_SNIPPET = """
 ## AeroDoc — Documentation Sync
 
-This project uses AeroDoc to keep `docs/AGENT_MANUAL.md` in sync with the codebase.
+This project uses AeroDoc to keep project documentation (`docs/AGENT_MANUAL.md`, etc.) in sync with the codebase.
 
 Whenever you modify files under `src/`, `prompts/`, or `.agents/skills/`, run:
 
@@ -60,7 +60,7 @@ Follow the output instructions to update the documentation. Full protocol: `.age
 """
 
 _CURSOR_MDC = """---
-description: Run AeroDoc to update docs/AGENT_MANUAL.md whenever src/, prompts/, or .agents/skills/ files change.
+description: Run AeroDoc to update project documentation whenever src/, prompts/, or .agents/skills/ files change.
 globs:
   - "src/**/*"
   - "prompts/**/*"
@@ -76,7 +76,7 @@ When files matching the globs above are saved or modified, run:
 python .agents/skills/aero_doc/scripts/aero_doc.py
 ```
 
-Then follow the instructions in `.agents/skills/aero_doc/skill.md` to update `docs/AGENT_MANUAL.md`.
+Then follow the instructions in `.agents/skills/aero_doc/skill.md` to update `docs/AGENT_MANUAL.md`, `docs/CHANGELOG_AGENTS.md`, and `README.md`.
 """
 
 _COPILOT_SNIPPET = """
@@ -88,7 +88,7 @@ This project uses AeroDoc. When `src/`, `prompts/`, or `.agents/skills/` files c
 python .agents/skills/aero_doc/scripts/aero_doc.py
 ```
 
-Follow `.agents/skills/aero_doc/skill.md` to update `docs/AGENT_MANUAL.md`.
+Follow `.agents/skills/aero_doc/skill.md` to update `docs/AGENT_MANUAL.md`, `docs/CHANGELOG_AGENTS.md`, and `README.md`.
 """
 
 
@@ -147,6 +147,7 @@ def cmd_install(args: argparse.Namespace) -> int:
     _ok(f"Skill files copied to {target}/")
     _ok("skill.md            - agent instructions (universal)")
     _ok("scripts/aero_doc.py - helper script")
+    _ok("resources/          - templates and supporting files")
 
     if not args.no_platform_files:
         _section("Generating platform config files")
